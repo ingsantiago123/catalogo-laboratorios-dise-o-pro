@@ -1,0 +1,140 @@
+/* ==========================================================================
+   Estilos propios de programa.html (Pantalla 2: elegir programa).
+   Se cargan DESPUÉS de styles.css, que ya trae los tokens --incca-*, el
+   hero, los botones, las tarjetas y los estados. Acá solo va la grilla de
+   programas. CSS a mano: sin Tailwind ni CDN.
+   ========================================================================== */
+
+.program-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--incca-space-5);
+}
+
+@media (min-width: 768px) {
+  .program-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (min-width: 992px) {
+  .program-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+.program-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--incca-space-4);
+}
+
+.program-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--incca-space-3);
+}
+
+/* Ícono en un "recipiente" que se llena de primary-700 al pasar el mouse
+   (scaleY de una capa, 200 ms). */
+.program-card__icon {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  overflow: hidden;
+  border-radius: var(--incca-radius-md);
+  background: var(--tema-suave);
+  color: var(--tema-marca);
+  transition: color 0s linear 90ms;
+}
+
+.program-card__icon::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--tema-boton);
+  transform: scaleY(0);
+  transform-origin: bottom center;
+  transition: transform var(--incca-duration) var(--incca-ease);
+}
+
+.program-card__icon .icon {
+  width: 24px;
+  height: 24px;
+}
+
+.program-card:focus-within .program-card__icon {
+  color: var(--tema-sobre-boton);
+}
+
+.program-card:focus-within .program-card__icon::before {
+  transform: scaleY(1);
+}
+
+@media (hover: hover) {
+  .program-card:hover .program-card__icon {
+    color: var(--tema-sobre-boton);
+  }
+
+  .program-card:hover .program-card__icon::before {
+    transform: scaleY(1);
+  }
+}
+
+.program-card__count {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--incca-space-1);
+  padding: 2px var(--incca-space-2);
+  border-radius: var(--incca-radius-sm);
+  background: var(--tema-fondo-2);
+  color: var(--tema-texto-2);
+  font-size: var(--incca-text-small);
+  line-height: 1.5;
+  text-align: right;
+}
+
+.program-card__count strong {
+  color: var(--tema-titulo);
+  font-family: var(--incca-font-mono);
+  font-weight: 700;
+}
+
+.program-card__title {
+  color: var(--tema-titulo);
+  font-size: var(--incca-text-h3);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.program-card__label {
+  margin-bottom: var(--incca-space-2);
+  color: var(--tema-texto-2);
+  font-size: var(--incca-text-caption);
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.program-card__desc {
+  color: var(--tema-texto-2);
+  font-size: var(--incca-text-small);
+  line-height: 1.5;
+}
+
+.program-card__footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: auto;
+  padding-top: var(--incca-space-4);
+  border-top: 1px solid var(--tema-borde);
+}
+
+.trust-note {
+  max-width: 70ch;
+  margin: var(--incca-space-7) auto 0;
+}

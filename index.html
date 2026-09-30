@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Laboratorios · INCConnection Lab</title>
+  <meta name="color-scheme" content="light dark" />
+  <!-- theme-color = --incca-primary-900 en claro y el fondo del tema oscuro (diseño/DESIGN.md §3.1 y §3.7) -->
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#0A2A4F" />
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#060F1E" />
+  <link rel="icon" href="data:," />
+  <!-- Tema guardado: va antes del CSS para que no parpadee -->
+  <script src="./assets/js/tema-init.js"></script>
+  <link rel="preload" href="./assets/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="./assets/fonts/jetbrains-mono-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="./assets/css/styles.css" />
+  <link rel="stylesheet" href="./assets/css/logo-intro.css" />
+  <link rel="stylesheet" href="./assets/css/index-styles.css" />
+</head>
+<body>
+  <noscript>
+    <div class="noscript-full">Esta página necesita JavaScript habilitado.</div>
+  </noscript>
+  <main id="app"><!-- todo el contenido lo inyecta assets/js/index-main.js --></main>
+  <script src="./assets/js/visor-ui.js"></script>
+  <!-- Intro del logo (opcional): geometría vectorial generada + animación. Sin estos dos, la pantalla muestra solo el selector. -->
+  <script src="./assets/js/logo-intro-svg.js"></script>
+  <script src="./assets/js/logo-intro.js"></script>
+  <script src="./assets/js/index-main.js"></script>
+</body>
+</html>

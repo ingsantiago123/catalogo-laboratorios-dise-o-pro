@@ -1,0 +1,4 @@
+Este es una pagina que funciona con la tecnologia de visores manejada en ocal revisa el readme, que necesito? rediseñar completamente la pagina slo a inivel de diseño pero que siga funcionando exactamente  
+necesito renovar visualmente todo el diseño tematica labortatoria, debes añadir animaciones bonitas instirucionales de tematica laboeratorios, animaciones analiza el ux ui todo
+y sigue el C:\Users\kevinsantiago.garzon\Downloads\visor-catalogo-lab-main\visor-catalogo-lab-main\diseño\DESIGN.md este sistema de disño para que siga una linea
+pero si mejoralo solo front debe seguir funcionando igual con la tecnologia , quita todo ese tailwind y cambiala por css , pero recuerda que siga funcinando coco visor 

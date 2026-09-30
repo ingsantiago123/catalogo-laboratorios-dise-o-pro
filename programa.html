@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Laboratorios Externos &amp; Convenios - Selección de Programa (U.INCCA)</title>
+  <meta name="color-scheme" content="light dark" />
+  <!-- theme-color = --incca-primary-900 en claro y el fondo del tema oscuro (diseño/DESIGN.md §3.1 y §3.7) -->
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#0A2A4F" />
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#060F1E" />
+  <link rel="icon" href="data:," />
+  <!-- Tema guardado: va antes del CSS para que no parpadee -->
+  <script src="assets/js/tema-init.js"></script>
+  <link rel="preload" href="assets/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="assets/css/styles.css" />
+  <link rel="stylesheet" href="assets/css/programa-styles.css" />
+</head>
+<body>
+  <noscript>
+    <div class="noscript-full">Esta página necesita JavaScript habilitado.</div>
+  </noscript>
+  <main id="app">
+    <!-- Encabezado: los textos con id los ajusta programa-main.js según ?coleccion= -->
+    <section class="hero">
+      <div class="container">
+        <div class="topbar">
+          <a class="btn btn--secondary" href="index.html">
+            <svg class="icon icon--arrow-left" aria-hidden="true" focusable="false"><use href="#i-arrow-left"></use></svg>
+            <span>Volver</span>
+          </a>
+          <span class="status-chip">
+            <span class="status-chip__led" aria-hidden="true"></span>
+            <span id="topBadgeText">Red de Convenios &amp; Plataformas Externas • Acceso Remoto</span>
+          </span>
+        </div>
+        <div class="hero__inner">
+          <div class="hero__text">
+            <p class="hero__eyebrow">
+              <span class="hero__eyebrow-icon"><svg class="icon" id="heroBadgeIcon" aria-hidden="true" focusable="false"><use href="#i-network"></use></svg></span>
+              <span id="heroBadgeText">Convenios Interinstitucionales, Simuladores &amp; Nube</span>
+            </p>
+            <h1 class="hero__title">Laboratorios <span class="hero__highlight" id="heroTitleWord">Externos</span></h1>
+            <p class="hero__lead" id="heroDescription">Plataformas, simuladores en la nube y bancos experimentales operados por entidades aliadas, redes académicas y convenios internacionales. Selecciona tu programa para acceder a las herramientas externas autorizadas.</p>
+          </div>
+          <div class="hero__art" data-visor-arte="laboratorio"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Grilla de programas (derivada de window.name, sin fetch propio) -->
+    <section class="content">
+      <div class="container">
+        <div class="program-grid" id="programsGrid">
+          <p class="loader loader__text" id="programsLoading">Cargando programas…</p>
+        </div>
+        <div class="alert alert--info trust-note">
+          <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-shield"></use></svg>
+          <p id="trustText">Plataformas externas con autenticación y licenciamiento gestionado por convenios interinstitucionales • 2025</p>
+        </div>
+      </div>
+    </section>
+
+    <footer class="site-footer">
+      <div class="container site-footer__inner">
+        <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-flask"></use></svg>
+        <span>Universidad INCCA de Colombia</span>
+      </div>
+    </footer>
+  </main>
+  <!-- Capa visual compartida (íconos, barra institucional, ilustración) -->
+  <script src="assets/js/visor-ui.js"></script>
+  <!-- Construcción dinámica de tarjetas de Programas + envío de datos al catálogo por window.name -->
+  <script src="assets/js/programa-main.js"></script>
+</body>
+</html>

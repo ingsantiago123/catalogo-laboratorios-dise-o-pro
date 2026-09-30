@@ -1,0 +1,163 @@
+/* ==========================================================================
+   Estilos propios de index.html (Pantalla 1: intro de marca + elegir colección).
+   Se cargan DESPUÉS de styles.css y logo-intro.css, que ya traen los tokens
+   (--incca-*, --tema-*, --il-*), el encabezado, los botones y las tarjetas.
+   Acá solo va la hoja de colecciones que sube sobre el escenario del logo.
+   CSS a mano: sin Tailwind ni CDN.
+   ========================================================================== */
+
+/* 1. Hoja de colecciones ---------------------------------------------------
+   Sube por encima del escenario siguiendo al scroll (1:1) mientras el logo,
+   que queda fijo detrás, se disuelve. Solapa exactamente el recorrido extra
+   de .intro (logo-intro.css), menos 48 px: en reposo queda debajo del borde de
+   la pantalla y su sombra no se asoma. */
+
+.selector {
+  position: relative;
+  z-index: 2;
+  flex: 1 0 auto;
+  margin-top: calc(-100vh + 48px);
+  margin-top: calc(-100svh + 48px);
+  min-height: 100vh;
+  min-height: 100svh;
+  padding-block: var(--incca-space-7) var(--incca-space-8);
+  border-radius: 28px 28px 0 0;
+  background: var(--tema-fondo);
+  box-shadow: 0 -1px 0 var(--il-sheet-edge), var(--il-sheet-shadow);
+}
+
+/* Sin intro (logo-intro.js no cargó) o con el escenario estático (movimiento
+   reducido): no hay pista de scroll que solapar. */
+.selector--solo,
+.intro--estatico + .selector {
+  margin-top: 0;
+  min-height: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .selector {
+    margin-top: 0;
+    min-height: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
+.selector--solo {
+  padding-top: var(--incca-space-8);
+}
+
+/* 2. Encabezado de la hoja -------------------------------------------------- */
+
+.selector__head {
+  max-width: 72ch;
+  margin-bottom: var(--incca-space-6);
+}
+
+.selector__head .status-chip {
+  margin-bottom: var(--incca-space-4);
+}
+
+.selector__title:focus {
+  outline: none;
+}
+
+/* El subrayado dorado se "traza" cuando el encabezado entra en pantalla (el
+   de styles.css corre al cargar la página, con la hoja todavía fuera de vista) */
+.selector__head .hero__highlight::after {
+  animation: none;
+  transform: scaleX(0);
+}
+
+.selector__head.reveal--visible .hero__highlight::after {
+  animation: selector-trazo 420ms var(--incca-ease) 280ms forwards;
+}
+
+.selector__head:not(.reveal--pending):not(.reveal--visible) .hero__highlight::after {
+  transform: none;
+}
+
+@keyframes selector-trazo {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+/* 3. Pie de la hoja --------------------------------------------------------- */
+
+.selector__pie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--incca-space-3);
+  margin-top: var(--incca-space-7);
+  padding-top: var(--incca-space-5);
+  border-top: 1px solid var(--tema-borde);
+}
+
+.selector__pie p {
+  color: var(--tema-texto-2);
+  font-size: var(--incca-text-small);
+}
+
+/* 4. Circuito bajo el encabezado y brillo de las tarjetas -------------------
+   Un trazo con un nodo en anillo, como los circuitos del logo, y una chispa
+   que lo recorre de vez en cuando. Decorativo (aria-hidden); solo transform y
+   opacity; se apaga con prefers-reduced-motion. */
+
+.selector__trace {
+  position: relative;
+  max-width: 640px;
+  height: 10px;
+  margin-top: var(--incca-space-5);
+}
+
+.selector__trace::before {
+  content: "";
+  position: absolute;
+  top: 4px;
+  left: 6px;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, var(--tema-anillo), var(--tema-borde) 45%, transparent);
+}
+
+.selector__trace::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid var(--tema-anillo);
+  border-radius: 50%;
+  background: var(--tema-fondo);
+}
+
+.selector__trace i {
+  position: absolute;
+  top: 3px;
+  left: 10px;
+  width: 64px;
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, var(--il-accent));
+  opacity: 0;
+  animation: selector-chispa 5.6s linear 1.4s infinite;
+}
+
+@keyframes selector-chispa {
+  0% { opacity: 0; transform: translateX(0); }
+  6% { opacity: .95; }
+  55% { opacity: .95; }
+  70%, 100% { opacity: 0; transform: translateX(560px); }
+}
+
+/* Al pasar el mouse (o con el foco), la tarjeta activa suma un halo de energía
+   al anillo de styles.css */
+.selector .card--interactive::before {
+  box-shadow: var(--incca-shadow-md), 0 0 26px -8px rgba(99, 214, 255, .55);
+  box-shadow: var(--incca-shadow-md), 0 0 26px -8px color-mix(in srgb, var(--il-accent) 55%, transparent);
+}
