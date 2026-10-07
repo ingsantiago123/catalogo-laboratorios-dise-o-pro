@@ -274,6 +274,7 @@
   // está observando: si algo falla, el contenido queda visible.
   // -------------------------------------------------------------------------
   function revelar(root) {
+    pausarFueraDeVista(root);
     if (reduceMotion || !root || !('IntersectionObserver' in window)) return;
     const pendientes = root.querySelectorAll('.reveal:not(.reveal--visible):not(.reveal--pending)');
     if (!pendientes.length) return;
@@ -294,10 +295,38 @@
     });
   }
 
+  // -------------------------------------------------------------------------
+  // Animaciones ambientales en pausa cuando no se ven. Las ilustraciones y
+  // el arte de las tarjetas animan partes de un SVG, y Chrome recalcula
+  // estilos, layout y pintado en cada cuadro mientras corran, aunque esten
+  // fuera de pantalla (medido: 0,4 s de CPU cada 8 s solo por el arte de la
+  // hoja de colecciones, todavia sin mostrar). Al volver a verse siguen desde
+  // donde quedaron.
+  // -------------------------------------------------------------------------
+  const AMBIENTALES = '.lab-art, .collection-art, .selector__trace, .status-chip, .lab-card__specimen, .empty-state__icon';
+  const observadas = new WeakSet();
+  let vigiaAmbiental = null;
+
+  function pausarFueraDeVista(root) {
+    if (!root || !('IntersectionObserver' in window)) return;
+    if (!vigiaAmbiental) {
+      vigiaAmbiental = new IntersectionObserver(entradas => {
+        entradas.forEach(e => e.target.classList.toggle('anim-pausa', !e.isIntersecting));
+      }, { rootMargin: '64px 0px' });
+    }
+    const lista = root.querySelectorAll ? root.querySelectorAll(AMBIENTALES) : [];
+    lista.forEach(el => {
+      if (observadas.has(el)) return;
+      observadas.add(el);
+      vigiaAmbiental.observe(el);
+    });
+  }
+
   // Ilustraciones pedidas desde HTML estático (programa.html).
   function pintarArteEstatico() {
     document.querySelectorAll('[data-visor-arte="laboratorio"]').forEach(el => {
       if (!el.firstElementChild) el.innerHTML = ilustracionLaboratorio();
+      pausarFueraDeVista(el);
     });
   }
 
@@ -417,6 +446,7 @@
     cargando,
     estadoVacio,
     revelar,
+    pausarFueraDeVista,
     reduceMotion,
     tema: { actual: temaActual, alternar: alternarTema }
   };

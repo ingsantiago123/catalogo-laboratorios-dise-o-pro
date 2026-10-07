@@ -2482,6 +2482,18 @@ img {
   50% { opacity: 1; transform: scale(1); }
 }
 
+/* Animaciones ambientales fuera de pantalla: en pausa (la clase la pone
+   VisorUI.pausarFueraDeVista en visor-ui.js). !important: tiene que ganarle
+   a la animacion declarada en cada componente. */
+.anim-pausa,
+.anim-pausa *,
+.anim-pausa::before,
+.anim-pausa::after,
+.anim-pausa *::before,
+.anim-pausa *::after {
+  animation-play-state: paused !important;
+}
+
 /* 21. Movimiento reducido (DESIGN.md §6) --------------------------------
    !important justificado: es la única forma de anular de forma global las
    animaciones y transiciones declaradas en cada componente. */

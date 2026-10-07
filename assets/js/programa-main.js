@@ -107,7 +107,8 @@ function leerEntrada() {
     if (window.name) {
       const data = JSON.parse(window.name);
       if (Array.isArray(data)) {
-        try { sessionStorage.setItem(CLAVE_RESPALDO, window.name); } catch (e) { /* sin storage disponible, no pasa nada */ }
+        // Solo si cambio: es el mismo texto de varios cientos de KB en cada carga.
+        try { if (sessionStorage.getItem(CLAVE_RESPALDO) !== window.name) sessionStorage.setItem(CLAVE_RESPALDO, window.name); } catch (e) { /* sin storage disponible, no pasa nada */ }
         return data;
       }
     }

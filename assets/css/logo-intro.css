@@ -161,6 +161,12 @@
   background: radial-gradient(70% 60% at 50% 46%, color-mix(in srgb, var(--il-accent) 34%, transparent), transparent 70%);
 }
 
+/* La hoja de colecciones tapa el escenario por completo: no se pinta (las
+   animaciones ademas quedan en pausa, ver pausar() en logo-intro.js). */
+.intro.is-cubierto .intro__stage {
+  visibility: hidden;
+}
+
 .intro.is-oculto .intro__scan,
 .intro.is-oculto .intro__cue-in,
 .intro.is-oculto .intro__cue-mouse i,
@@ -223,6 +229,7 @@
 }
 
 .intro__logo {
+  position: relative;
   width: 100%;
 }
 
@@ -379,6 +386,32 @@
   max-height: 52svh;
   overflow: visible;
   filter: var(--il-halo);
+  /* Cada capa en su propia capa de composicion: lo que se mueve encima no
+     obliga a volver a rasterizar el logo quieto (mascaras y halo). */
+  will-change: transform;
+}
+
+/* Capas que arma logo-intro.js sobre el logo, con el mismo encuadre:
+   - .il-efectos: canvas con electrones y colas, pulsos, ondas y destellos
+     de nodos (colores: --il-logo, --il-accent y --il-hot; grosores y
+     opacidades de siempre, ver CAPAS_PULSO en logo-intro.js). Su posicion y
+     tamano los fija el script (incluye un margen alrededor del viewBox).
+   - .il-capa: SVG con el boton "on", el frente de energia, los rayos y el
+     brillo. */
+.il-efectos {
+  position: absolute;
+  display: block;
+  pointer-events: none;
+  filter: var(--il-halo);
+  will-change: transform;
+}
+
+.il-capa {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  max-height: none;
+  pointer-events: none;
 }
 
 /* Estado base = logo completo. La intro solo lo "construye" mientras el
@@ -435,20 +468,6 @@
   stroke-dasharray: 1 1;
 }
 
-.il-tail {
-  fill: none;
-  stroke: var(--il-accent);
-  stroke-width: 1.1;
-  stroke-linecap: round;
-  opacity: 0;
-}
-
-.il-electron {
-  fill: var(--il-logo);
-  transform-box: fill-box;
-  transform-origin: center;
-}
-
 .il-gear {
   transform-origin: 158.62px 80.32px;
 }
@@ -460,31 +479,11 @@
   opacity: 0;
 }
 
-/* Efectos dibujados por logo-intro.js: pulsos por los circuitos, ondas,
-   frente de energía y rayos. */
+/* Efectos dibujados por logo-intro.js en el SVG de arriba: frente de
+   energia y rayos (pulsos y ondas van en el canvas .il-efectos). */
 .il-front {
   fill: url(#il-fg);
   opacity: 0;
-  pointer-events: none;
-}
-
-.il-pulse {
-  fill: none;
-  stroke: var(--il-accent);
-  stroke-linecap: round;
-}
-
-.il-pulse--halo { stroke-width: 4.4; opacity: .13; }
-.il-pulse--mid { stroke-width: 2.6; opacity: .3; }
-.il-pulse--core { stroke: var(--il-hot); stroke-width: 1.2; }
-
-.il-ping {
-  fill: none;
-  stroke: var(--il-accent);
-  stroke-width: 1;
-  vector-effect: non-scaling-stroke;
-  transform-box: fill-box;
-  transform-origin: center;
   pointer-events: none;
 }
 
@@ -508,6 +507,7 @@
 
 /* Equipos lentos (logo-intro.js lo activa solo): sin brillos con filtro */
 .is-ligero .il-svg,
+.is-ligero .il-efectos,
 .is-ligero .il-bolts { filter: none; }
 
 .il-spark {
@@ -522,10 +522,10 @@
 .il-play .il-trace,
 .il-play .il-neon { animation: il-trazo var(--t, .8s) linear var(--d, 0s) backwards; }
 .il-play .il-orbit { animation: il-trazo 1.1s cubic-bezier(.5, 0, .3, 1) var(--d, 0s) backwards; }
-.il-play .il-node,
-.il-play .il-electron { animation: il-brotar .5s cubic-bezier(.3, 1.7, .5, 1) var(--d, 0s) backwards; }
+.il-play .il-node { animation: il-brotar .5s cubic-bezier(.3, 1.7, .5, 1) var(--d, 0s) backwards; }
 .il-play .il-on-glow path { animation: il-encender 1.8s ease-out 2.95s both, il-respirar 3.4s ease-in-out 4.75s infinite; }
-.il-play .il-svg { animation: il-destello .9s ease-out 2.95s backwards; }
+.il-play .il-svg,
+.il-play .il-efectos { animation: il-destello .9s ease-out 2.95s backwards; }
 
 /* Logo completo al instante (volver a la pantalla o mover el scroll antes de
    que termine la intro): sin entrada, pero el botón "on" sigue respirando. */
@@ -535,8 +535,8 @@
 .il-saltar .il-neon,
 .il-saltar .il-orbit,
 .il-saltar .il-node,
-.il-saltar .il-electron,
-.il-saltar .il-svg { animation: none; }
+.il-saltar .il-svg,
+.il-saltar .il-efectos { animation: none; }
 .il-saltar .il-on-glow path { animation: il-respirar 3.4s ease-in-out infinite; }
 
 .il-surge { animation: il-destello .8s ease-out; }

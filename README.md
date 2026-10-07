@@ -208,10 +208,11 @@ y la navegación no dependen de ella.
   disolución (escenario estático, el logo completo y la indicación de scroll).
   El `<h1>` es un texto oculto visualmente, el logo lleva `<title>` y la
   indicación es un enlace con foco visible.
-- **Rendimiento**: el bucle de animación se detiene cuando el escenario sale de
-  pantalla o la pestaña se oculta; los brillos se dibujan con trazos apilados
-  (solo el botón «on» y los rayos usan filtro SVG) y en equipos lentos pasa
-  solo a un modo ligero sin filtros.
+- **Rendimiento**: ver la seccion "Rendimiento (2.0)" mas abajo. En resumen:
+  el logo va en tres capas (SVG quieto, canvas con lo que se mueve todo el
+  tiempo y un SVG con lo que aparece a ratos), todo se pausa cuando el
+  escenario no se ve y en equipos lentos pasa solo a un modo ligero sin
+  filtros.
 - **Geometría**: `logo-intro-svg.js` se vectorizó del PNG de
   `logo-incconection-lab/` (engranaje y órbitas del átomo exactos, el resto
   trazado con potrace). Cada pieza tiene su clase `il-*` y se puede editar a
@@ -219,6 +220,54 @@ y la navegación no dependen de ella.
 - **Desviación declarada de DESIGN.md §1/§9** (pedido explícito del proyecto):
   este escenario anima, inclina y disuelve el logo, le suma brillo neón y usa un
   fondo con degradado radial. No se usa así en ninguna otra pantalla.
+
+## Rendimiento (2.0)
+
+Version 2.0.0 (2026-10-07): mismo diseño, mismas animaciones y mismo contrato
+de datos; cambia solo como se dibuja. Medido en Chrome (headless, por CDP) con
+los 161 items reales, antes → despues:
+
+| Que | Antes | Despues |
+|---|---|---|
+| Montaje del logo (tarea larga al cargar), CPU normal / CPU x4 | 228 ms / 991 ms | 52 ms / 225 ms |
+| CPU con el logo en reposo (cada 10 s) | 2,2 s | 0,8 s |
+| CPU con la hoja de colecciones arriba (cada 10 s) | 1,0 s | 0,2 s |
+| Disolucion con CPU x4, cuadro mediano / p95 | 36 / 72 ms (cae a modo ligero) | 18 / 54 ms (sin modo ligero) |
+| Catalogo de 115 laboratorios en pantalla 1x: al abrir / bajando todo | 1,4 MB / 13,6 MB | 0,6 MB / 4,3 MB |
+| "Volver" del catalogo dentro de un iframe (Moodle) | ~500 ms | ~100 ms |
+
+Que se hizo:
+
+- **Logo en tres capas** (`logo-intro.js`): el SVG del logo queda quieto (en
+  reposo no se vuelve a pintar); electrones con sus colas, pulsos por los
+  circuitos, ondas y destellos de nodos se dibujan en un `<canvas>`
+  (`.il-efectos`); el boton "on", el frente de energia, los rayos y el brillo
+  van en un SVG encima (`.il-capa`), en el mismo orden de pintado de siempre.
+  Una sola animacion de un elemento SVG obliga a Chrome a recalcular estilos,
+  layout y pintado en cada cuadro; el canvas cuesta unas 4 veces menos.
+- **Orbitas por tabla**: las orbitas son elipses y su recorrido por longitud de
+  arco se calcula a mano (`tablaOrbita()`); `getPointAtLength` sobre un arco
+  costaba ~0,12 ms por llamada (158 ms al montar y 3 llamadas por cuadro).
+- **Pausa de lo que no se ve**: con la hoja de colecciones tapando el
+  escenario, fuera de pantalla o con la pestaña oculta, el escenario pausa sus
+  animaciones y deja de pintarse (`.is-cubierto`). Las animaciones ambientales
+  del resto de las pantallas (ilustracion, arte de las tarjetas) se pausan fuera
+  de pantalla (`VisorUI.pausarFueraDeVista`, clase `.anim-pausa`).
+- **Sin layouts forzados**: la posicion de scroll se guarda en vez de leerla
+  cada vez que nace un efecto.
+- **Imagenes de PhET responsive** (`main.js`): las tarjetas piden la captura de
+  420, 600 o 900 px segun el ancho y la densidad de la pantalla (PhET las sirve
+  con `no-store`: se bajan en cada visita). La ficha sigue con la de 900.
+- **"Volver" sin espera**: el catalogo solo le pregunta al anfitrion si este
+  anuncio antes que maneja "volver" (`{ source: 'anfitrion', type: 'hola' }`);
+  si no, navega de una.
+- **Version en los assets**: los `<link>`/`<script>` llevan `?v=2.0.0`. GitHub
+  Pages cachea 10 minutos: al publicar cambios, subir ese numero en las 4
+  paginas para que nadie mezcle HTML nuevo con JS viejo.
+
+Del lado de Moodle (`local_labcatalog` 0.7.0) el JSON que llega por
+`window.name` pesa la mitad (153 KB en vez de 295 KB: se dejaron de enviar 3
+campos que el visor nunca mostro) y `catalogo.php` lo sirve desde cache.
 
 ## `catalogo.html` — el visor puro (pantalla 3)
 

@@ -181,9 +181,25 @@
       </div>`;
   }
 
-  function construirEsquema(imagen, iconoCategoria, categoria, textoAlt) {
+  // Las capturas de PhET existen en 420, 600 y 900 px de ancho (misma imagen;
+  // PhET las sirve con no-store, asi que se bajan en cada visita). En las
+  // tarjetas el navegador elige la menor que alcance para el ancho real y la
+  // densidad de la pantalla: en 1x pesa ~68 % menos (46 KB contra 144 KB de
+  // promedio) y en pantallas densas sigue eligiendo la de 900. Cualquier otra
+  // URL va tal cual.
+  const PHET_900 = /^(https:\/\/phet\.colorado\.edu\/.+)-900\.png$/i;
+  const TAMANOS_TARJETA = '(min-width: 1250px) 384px, (min-width: 992px) 31vw, (min-width: 768px) 47vw, 92vw';
+
+  function atributosImagen(imagen, responsive) {
+    const m = responsive && PHET_900.exec(imagen);
+    if (!m) return `src="${escapeHtml(imagen)}"`;
+    const base = escapeHtml(m[1]);
+    return `src="${base}-420.png" srcset="${base}-420.png 420w, ${base}-600.png 600w, ${base}-900.png 900w" sizes="${TAMANOS_TARJETA}"`;
+  }
+
+  function construirEsquema(imagen, iconoCategoria, categoria, textoAlt, responsive) {
     if (!imagen) return construirPlaceholder(iconoCategoria, categoria);
-    return `<img src="${escapeHtml(imagen)}" alt="${escapeHtml(textoAlt || '')}" loading="lazy" decoding="async" data-fallback-icon="${escapeHtml(iconoCategoria)}" data-fallback-cat="${escapeHtml(categoria)}">`;
+    return `<img ${atributosImagen(imagen, responsive)} alt="${escapeHtml(textoAlt || '')}" loading="lazy" decoding="async" data-fallback-icon="${escapeHtml(iconoCategoria)}" data-fallback-cat="${escapeHtml(categoria)}">`;
   }
 
   function activarFallbackImagenes(root) {
@@ -205,7 +221,7 @@
     return `
 <article class="lab-card reveal" data-item="${escapeHtml(item.id)}" data-category="${catKey}" tabindex="0" role="button" aria-haspopup="dialog" aria-label="${escapeHtml(item.nombre)}. Ver ficha del laboratorio">
   <div class="lab-card__thumb">
-    ${construirEsquema(item.imagen, iconoCategoria, item.categoria, '')}
+    ${construirEsquema(item.imagen, iconoCategoria, item.categoria, '', true)}
     <span class="lab-card__origin">${escapeHtml(item.origen)}</span>
     <span class="lab-card__view" aria-hidden="true">${icono('eye')}Ver ficha</span>
   </div>
@@ -708,10 +724,19 @@
   // window, así que esto navega derecho a volver_url. Queda implementado
   // completo porque prueba.html SÍ embebe el visor en un <iframe>.
   // ---------------------------------------------------------------------
+  // El anfitrion que quiera manejar "volver" por su cuenta lo anuncia antes
+  // con { source: 'anfitrion', type: 'hola' }. Si no lo anuncio (Moodle no lo
+  // hace), el visor navega de una: antes esperaba 400 ms una respuesta que
+  // nunca llegaba en cada clic en "Volver".
+  let anfitrionManejaVolver = false;
+  window.addEventListener('message', (ev) => {
+    if (ev.data && ev.data.source === 'anfitrion' && ev.data.type === 'hola') anfitrionManejaVolver = true;
+  });
+
   function volver(volverUrl) {
     const embebido = window.parent && window.parent !== window;
 
-    if (!embebido || !volverUrl) {
+    if (!embebido || !volverUrl || !anfitrionManejaVolver) {
       if (volverUrl) window.location.href = volverUrl;
       return;
     }
