@@ -26,11 +26,42 @@ function escapeHtml(str) {
 // .../view); para incrustarlos en un <iframe> hay que pedir la variante
 // "/preview" del mismo archivo. Si la URL no matchea el patrón esperado,
 // se devuelve tal cual (mejor un link roto visible que ocultar el dato).
+// Mismas reglas que utils::normalizar_url_embebible() del plugin y toEmbedUrl()
+// de los visores de curso (GUIA_NUEVO_VISOR_OPTIMIZADO.md §2.3): tambien
+// /file/u/0/d/ID (selector de cuenta), open?id= y uc?id=.
 function toEmbedUrlDrive(url) {
   if (!url) return '';
-  const m = String(url).match(/drive\.google\.com\/file\/d\/([\w-]+)/);
+  const texto = String(url);
+  const m = texto.match(/drive\.google\.com\/file\/(?:u\/\d+\/)?d\/([\w-]+)/)
+    || texto.match(/drive\.google\.com\/(?:open|uc)\?(?:[^#]*&)?id=([\w-]+)/);
   if (m) return `https://drive.google.com/file/d/${m[1]}/preview`;
   return url;
+}
+
+// ---------------------------------------------------------------------------
+// Reproductor de Drive en celular
+//
+// El reproductor /preview de Drive NO es responsive por debajo de ~300 px de
+// alto: dibuja su propia interfaz (barra superior, boton de play, barra de
+// controles) con tamanos minimos. En un marco 16:9 de celular (297-343 px de
+// ancho = 167-193 px de alto) el play queda abajo y cortado, el poster se ve
+// ampliado y los controles inferiores quedan fuera del marco. Por eso, en
+// pantallas angostas el video NO se incrusta en la pagina: se muestra una
+// fachada (poster + play) y el reproductor se abre en una capa que ocupa toda
+// la pantalla, donde Drive si tiene espacio. En pantallas anchas (marco de
+// >= 300 px de alto) sigue incrustado como siempre. Los demas origenes
+// (no Drive) se incrustan siempre.
+// ---------------------------------------------------------------------------
+const MQ_ANGOSTO = '(max-width: 599.98px)';
+const ALLOW_REPRODUCTOR = 'autoplay; fullscreen; picture-in-picture; encrypted-media';
+
+function esDrive(embedUrl) {
+  return /^https:\/\/drive\.google\.com\/file\/d\//.test(embedUrl || '');
+}
+
+function posterDrive(embedUrl) {
+  const m = String(embedUrl || '').match(/drive\.google\.com\/file\/d\/([\w-]+)/);
+  return m ? `https://drive.google.com/thumbnail?id=${m[1]}&sz=w800` : '';
 }
 
 // A diferencia de catalogo.html (que espera { items: [...] }), acá el
@@ -102,11 +133,14 @@ function renderVideo(item) {
 <section class="content">
   <div class="container video-layout">
     <div class="video-main">
-      <div class="video-player">
-        ${embedUrl
-          ? `${UI ? UI.cargando('Cargando video…', 'loader--on-dark') : ''}<iframe src="${escapeHtml(embedUrl)}" allow="autoplay; fullscreen" allowfullscreen loading="lazy" title="${escapeHtml(item.nombre)}"></iframe>`
-          : `<div class="video-player__empty">${icono('film')}<p>Video no disponible</p></div>`}
+      <div class="video-player" id="videoPlayer">
+        ${embedUrl ? '' : `<div class="video-player__empty">${icono('film')}<p>Video no disponible</p></div>`}
       </div>
+      ${embedUrl ? `
+      <div class="video-actions">
+        <a class="btn btn--secondary" href="${escapeHtml(item.videoUrl || embedUrl)}" target="_blank" rel="noopener noreferrer">Abrir en Google Drive${icono('external')}</a>
+        <p class="video-nota">${icono('info')}<span>Si el video no carga o Google pide acceso, usa Abrir en Google Drive.</span></p>
+      </div>` : ''}
 
       <section class="video-section">
         <h2 class="section-title">${icono('info')}Descripción</h2>
@@ -129,10 +163,7 @@ function renderVideo(item) {
 </section>
 ${renderPie()}`;
 
-  // El cargador vive detrás del <iframe>: se retira cuando el video carga.
-  const iframe = document.querySelector('.video-player iframe');
-  const cargador = document.querySelector('.video-player .loader');
-  if (iframe && cargador) iframe.addEventListener('load', () => cargador.remove(), { once: true });
+  if (embedUrl) iniciarReproductor(embedUrl, item);
 
   const volverLink = document.getElementById('volverLink');
   if (volverLink) {
@@ -145,6 +176,105 @@ ${renderPie()}`;
       } catch (e) { /* sin storage disponible: catalogo.html cae a su estado "sin datos" */ }
     });
   }
+}
+
+// Elige entre incrustado (pantalla ancha u origen que no es Drive) y fachada
+// con capa grande (Drive en pantalla angosta), y lo reevalua si la pantalla
+// cambia de lado (por ejemplo al girar el celular).
+function iniciarReproductor(embedUrl, item) {
+  const player = document.getElementById('videoPlayer');
+  if (!player) return;
+  const nombre = item.nombre || 'Laboratorio en vivo';
+  const mq = window.matchMedia ? window.matchMedia(MQ_ANGOSTO) : null;
+  let modo = null;
+
+  function incrustar() {
+    player.innerHTML = `${UI ? UI.cargando('Cargando video…', 'loader--on-dark') : ''}<iframe src="${escapeHtml(embedUrl)}" allow="${ALLOW_REPRODUCTOR}" allowfullscreen loading="lazy" title="${escapeHtml(nombre)}"></iframe>`;
+    const iframe = player.querySelector('iframe');
+    const cargador = player.querySelector('.loader');
+    // El cargador vive detrás del <iframe>: se retira cuando el video carga.
+    if (iframe && cargador) iframe.addEventListener('load', () => cargador.remove(), { once: true });
+  }
+
+  function fachada() {
+    const poster = posterDrive(embedUrl);
+    player.innerHTML = `
+<button type="button" class="video-fachada" aria-label="Reproducir video: ${escapeHtml(nombre)}" aria-haspopup="dialog">
+  ${poster ? `<img class="video-fachada__img" src="${escapeHtml(poster)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : ''}
+  <span class="video-fachada__play" aria-hidden="true">${icono('play')}</span>
+  <span class="video-fachada__hint">Toca para verlo en pantalla grande</span>
+</button>`;
+    const img = player.querySelector('.video-fachada__img');
+    // Un archivo no publico no tiene miniatura: queda el fondo de color.
+    if (img) img.addEventListener('error', () => img.remove(), { once: true });
+    player.querySelector('.video-fachada').addEventListener('click', ev => abrirCapa(embedUrl, item, ev.currentTarget));
+  }
+
+  function actualizar() {
+    const deseado = esDrive(embedUrl) && mq && mq.matches ? 'fachada' : 'incrustado';
+    if (deseado === modo) return;
+    cerrarCapa();
+    modo = deseado;
+    if (modo === 'fachada') fachada(); else incrustar();
+  }
+
+  actualizar();
+  if (mq) {
+    if (mq.addEventListener) mq.addEventListener('change', actualizar);
+    else if (mq.addListener) mq.addListener(actualizar);
+  }
+}
+
+// Capa a pantalla completa con el reproductor. Cubre el viewport del visor
+// (en Moodle, el del iframe de catalogo.php). El fondo queda inerte, el foco
+// entra al boton de cerrar y vuelve a la fachada al cerrar; Escape cierra.
+let capaAbierta = null;
+
+function abrirCapa(embedUrl, item, disparador) {
+  if (capaAbierta) return;
+  const nombre = item.nombre || 'Laboratorio en vivo';
+  const capa = document.createElement('div');
+  capa.className = 'video-capa';
+  capa.setAttribute('role', 'dialog');
+  capa.setAttribute('aria-modal', 'true');
+  capa.setAttribute('aria-label', nombre);
+  capa.innerHTML = `
+<div class="video-capa__barra">
+  <p class="video-capa__titulo">${escapeHtml(nombre)}</p>
+  <a class="btn btn--secondary video-capa__drive" href="${escapeHtml(item.videoUrl || embedUrl)}" target="_blank" rel="noopener noreferrer">Abrir en Drive${icono('external')}</a>
+  <button type="button" class="video-capa__cerrar" aria-label="Cerrar video">${icono('x')}</button>
+</div>
+<div class="video-capa__marco">
+  ${UI ? UI.cargando('Cargando video…', 'loader--on-dark') : ''}
+  <iframe src="${escapeHtml(embedUrl)}" allow="${ALLOW_REPRODUCTOR}" allowfullscreen title="${escapeHtml(nombre)}"></iframe>
+</div>`;
+
+  const fondo = [document.querySelector('.site-header'), document.querySelector('.tema-dock'), document.getElementById('app')].filter(Boolean);
+  fondo.forEach(el => el.setAttribute('inert', ''));
+  document.body.appendChild(capa);
+  document.documentElement.classList.add('video-capa-abierta');
+
+  const iframe = capa.querySelector('iframe');
+  const cargador = capa.querySelector('.loader');
+  if (cargador) iframe.addEventListener('load', () => cargador.remove(), { once: true });
+
+  const alTeclado = ev => { if (ev.key === 'Escape') cerrarCapa(); };
+  document.addEventListener('keydown', alTeclado);
+  capa.querySelector('.video-capa__cerrar').addEventListener('click', cerrarCapa);
+
+  capaAbierta = { capa, fondo, alTeclado, disparador };
+  capa.querySelector('.video-capa__cerrar').focus({ preventScroll: true });
+}
+
+function cerrarCapa() {
+  if (!capaAbierta) return;
+  const { capa, fondo, alTeclado, disparador } = capaAbierta;
+  capaAbierta = null;
+  document.removeEventListener('keydown', alTeclado);
+  capa.remove();                                  // destruye el iframe: el video deja de sonar
+  fondo.forEach(el => el.removeAttribute('inert'));
+  document.documentElement.classList.remove('video-capa-abierta');
+  if (disparador && document.contains(disparador) && disparador.focus) disparador.focus({ preventScroll: true });
 }
 
 document.addEventListener('DOMContentLoaded', () => {

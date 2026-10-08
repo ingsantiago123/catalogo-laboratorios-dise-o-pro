@@ -261,13 +261,46 @@ Que se hizo:
 - **"Volver" sin espera**: el catalogo solo le pregunta al anfitrion si este
   anuncio antes que maneja "volver" (`{ source: 'anfitrion', type: 'hola' }`);
   si no, navega de una.
-- **Version en los assets**: los `<link>`/`<script>` llevan `?v=2.0.0`. GitHub
+- **Version en los assets**: los `<link>`/`<script>` llevan `?v=2.1.0`. GitHub
   Pages cachea 10 minutos: al publicar cambios, subir ese numero en las 4
   paginas para que nadie mezcle HTML nuevo con JS viejo.
 
 Del lado de Moodle (`local_labcatalog` 0.7.0) el JSON que llega por
 `window.name` pesa la mitad (153 KB en vez de 295 KB: se dejaron de enviar 3
 campos que el visor nunca mostro) y `catalogo.php` lo sirve desde cache.
+
+## Videos de Google Drive en celular (2.1)
+
+Version 2.1.0 (2026-10-08). El reproductor `/preview` de Drive no es
+responsive por debajo de ~300 px de alto: dibuja su propia interfaz (barra
+superior, play, controles) con tamaños minimos. En un marco 16:9 de celular
+(297-343 px de ancho = 167-193 px de alto) el play queda abajo y cortado, el
+poster se ve ampliado y los controles inferiores quedan fuera del marco. La
+caja del iframe estaba bien (16:9 exacta); el problema esta en lo que Drive
+dibuja adentro. Detalle y medidas en `GUIA_NUEVO_VISOR_OPTIMIZADO.md` §2.10
+(carpeta `visorincca version final 443`).
+
+Que hace `video.html` ahora (`assets/js/video-main.js`):
+
+- **Pantalla ancha** (>= 600 px) u origen que no es Drive: el video va
+  incrustado como siempre (marco de >= 300 px de alto).
+- **Celular** (< 600 px) con Drive: fachada (poster + play) y, al tocar, el
+  reproductor se abre en una **capa a pantalla completa** (barra con titulo,
+  "Abrir en Drive" y cerrar; el iframe ocupa el resto). Al girar el celular se
+  reevalua solo. La capa es un dialogo accesible: fondo `inert`, foco al boton
+  de cerrar y de vuelta a la fachada, Escape cierra, y al cerrar se destruye el
+  iframe (el video deja de sonar).
+- **"Abrir en Google Drive"** siempre junto al reproductor, con una nota por si
+  Google pide acceso o el video no carga. Sin poster (archivo no publico) la
+  fachada usa un fondo de color.
+- **URLs de Drive**: `toEmbedUrlDrive()` tambien reconoce `/file/u/0/d/ID`,
+  `open?id=` y `uc?id=` (mismas reglas que el plugin).
+- Los videos tienen que estar compartidos como "cualquier persona con el
+  enlace"; si no, Drive muestra su pantalla de inicio de sesion dentro del marco.
+
+Limite conocido: la capa cubre el viewport del visor, que en Moodle es el
+iframe de `catalogo.php` (`min-height: 480px`); en un celular en horizontal
+(390 px de alto) la parte baja de la capa puede quedar bajo el borde visible.
 
 ## `catalogo.html` — el visor puro (pantalla 3)
 
